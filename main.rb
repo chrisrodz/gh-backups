@@ -28,11 +28,12 @@ end
 
 post '/' do
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
-	username = 'chrisrodz'
-	repo = 'Snipps'
-	r = HTTParty.get('https://api.github.com/repos/chrisrodz/Snipps', :headers => {'User-Agent' => 'yosoyelmejor'} )
+	username = params[:username]
+	repo = params[:repo]
+	r = HTTParty.get("https://api.github.com/repos/#{username}/#{repo}", :headers => {'User-Agent' => 'yosoyelmejor'} )
 	body = JSON.parse(r.body)
 	git_url = body["git_url"]
+	puts git_url
 	if system("git clone #{git_url}")
 		if system("zip -r #{repo} #{repo}")
 			up_result = drive_client.uploadFiles({:path => "/#{repo}"}, ["#{repo}.zip"])
