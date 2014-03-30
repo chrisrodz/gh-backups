@@ -2,13 +2,16 @@ require 'sinatra'
 require 'cloud_elements'
 require 'json'
 require 'httparty'
+require 'haml'
 
 
-before do
-	content_type 'application/json'
-end
+set :public_folder, 'public'
 
 get '/' do
+	send_file File.join(settings.public_folder, 'index.html')
+end
+
+post '/' do
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
 	username = 'chrisrodz'
 	repo = 'Snipps'
@@ -27,3 +30,21 @@ get '/' do
 		"Not cloned repo"
 	end
 end
+
+post '/gitcommand' do
+	command = params[:command]
+	repo = params[:repo]
+	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
+	repo_file = drive_client.get( {:path => "/#{repo}/#{repo}.zip"})
+	File.open("#{repo}.zip", "w") {|f| f.write(repo_file)}
+	if system("unzip #{repo}.zip")
+		command_output = `cd #{repo} && #{command}`
+		`rm -rf #{repo}`
+		`rm #{repo}.zip`
+		command_output
+	end
+end
+
+
+
+
