@@ -1,11 +1,17 @@
 require 'sinatra'
 require 'cloud_elements'
-require 'json'
+require 'json/ext'
 require 'httparty'
-require 'haml'
+require 'mongo'
 
+include Mongo
 
-set :public_folder, 'public'
+configure do
+	set :public_folder, 'public'
+	conn = MongoClient.new("localhost", 27017)
+	set :mongo_connection, conn
+	set :mongo_db, conn.db('test')
+end
 
 get '/' do
 	send_file File.join(settings.public_folder, 'index.html')
@@ -25,9 +31,16 @@ post '/' do
 			system("rm -rf #{repo}.zip")	
 		end
 		system("rm -rf #{repo}")
-		"Uploaded repo"
+		backup_data = {
+			:username => username,
+			:repo => repo,
+			:git_url => git_url,
+			:timestamp => Time.now.utc
+		}
+		settings.mongo_db['hackpr'].insert(backup_data)
+		"Success!"
 	else
-		"Not cloned repo"
+		"Failure!"
 	end
 end
 
@@ -45,6 +58,12 @@ post '/gitcommand' do
 	end
 end
 
-
+get '/db' do
+	if settings.mongo_db['hackpr'].insert({:otra => 'cosa'})
+		"funciono"
+	else
+		"no funciono"
+	end
+end
 
 
