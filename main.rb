@@ -15,28 +15,11 @@ def get_connection
   @db_connection
 end
 
-configure do
-	set :public_folder, 'public'
-	conn = get_connection
-	set :mongo_connection, conn
-	set :mongo_db, conn.collection('hackpr')
-end
-
-get '/' do
-	send_file File.join(settings.public_folder, 'index.html')
-end
-
-post '/' do
-	push = JSON.parse(params[:payload])
-	puts push["repository"]["name"]
-	puts push["repository"]["owner"]["name"]
+def copy_to_cloud(username, repo)
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
-	username = push["repository"]["owner"]["name"]
-	repo = push["repository"]["name"]
 	r = HTTParty.get("https://api.github.com/repos/#{username}/#{repo}", :headers => {'User-Agent' => 'yosoyelmejor'} )
 	body = JSON.parse(r.body)
 	git_url = body["git_url"]
-	puts git_url
 	if system("git clone #{git_url}")
 		if system("zip -r #{repo} #{repo}")
 			up_result = drive_client.uploadFiles({:path => "/#{repo}"}, ["#{repo}.zip"])
@@ -50,7 +33,43 @@ post '/' do
 			:git_url => git_url,
 			:timestamp => Time.now.utc
 		}
-		settings.mongo_db.insert(backup_data)
+		return backup_data
+	else
+		return false
+	end
+end
+
+configure do
+	set :public_folder, 'public'
+	conn = get_connection
+	set :mongo_connection, conn
+	set :mongo_db, conn.collection('hackpr')
+end
+
+get '/' do
+	send_file File.join(settings.public_folder, 'index.html')
+end
+
+post '/copy' do
+	username = params[:username]
+	repo = params[:repo]
+	data = copy_to_cloud(username, repo)
+	if data != false
+		settings.mongo_db.insert(data)
+		"Success!"
+	else
+		"Failure"
+	end
+end
+
+post '/copy_from_push' do
+	push = JSON.parse(params[:payload])	
+	username = push["repository"]["owner"]["name"]
+	repo = push["repository"]["name"]
+
+	data = copy_to_cloud(username, repo)
+	if data != false
+		settings.mongo_db.insert(data)
 		"Success!"
 	else
 		"Failure!"
