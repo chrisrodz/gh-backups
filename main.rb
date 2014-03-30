@@ -66,9 +66,11 @@ end
 # Route to make backup given parameters
 post '/copy' do
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
+	dropbox_client = Element.new('document', ENV['CE_DROPBOX_TOKEN'])
 	username = params[:username]
 	repo = params[:repo]
 	data = copy_to_cloud(username, repo, drive_client)
+	data2 = copy_to_cloud(username, repo, dropbox_client)
 	if data != false
 		settings.mongo_db.insert(data)
 		send_file File.join(settings.public_folder, 'success.html')
@@ -80,11 +82,13 @@ end
 # Github webhook route that backs up repos on push
 post '/copy_from_push' do
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
+	dropbox_client = Element.new('document', ENV['CE_DROPBOX_TOKEN'])
 	push = JSON.parse(params[:payload])	
 	username = push["repository"]["owner"]["name"]
 	repo = push["repository"]["name"]
 
 	data = copy_to_cloud(username, repo, drive_client)
+	data2 = copy_to_cloud(username, repo, dropbox_client)
 	if data != false
 		settings.mongo_db.insert(data)
 		send_file File.join(settings.public_folder, 'success.html')
