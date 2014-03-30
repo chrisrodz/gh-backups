@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+gem 'sinatra'
+gem 'httparty'
+gem 'cloud_elements'
+gem 'mongo'
