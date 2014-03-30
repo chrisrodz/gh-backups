@@ -27,9 +27,12 @@ get '/' do
 end
 
 post '/' do
+	push = JSON.parse(params[:payload])
+	puts push["repository"]["name"]
+	puts push["repository"]["owner"]["name"]
 	drive_client = Element.new('document', ENV['CE_DRIVE_TOKEN'])
-	username = params[:username]
-	repo = params[:repo]
+	username = push["repository"]["owner"]["name"]
+	repo = push["repository"]["name"]
 	r = HTTParty.get("https://api.github.com/repos/#{username}/#{repo}", :headers => {'User-Agent' => 'yosoyelmejor'} )
 	body = JSON.parse(r.body)
 	git_url = body["git_url"]
