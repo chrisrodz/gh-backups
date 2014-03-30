@@ -16,21 +16,10 @@ get '/' do
 	body = JSON.parse(r.body)
 	git_url = body["git_url"]
 	if system("git clone #{git_url}")
-		Dir.glob("#{repo}/**/*") do |item|
-			if not File.directory?(item)
-				*before, after = item.split("/")
-				path = before.join("/")
-				up_result = drive_client.uploadFiles({:path => "/#{path}"}, [item])
-				puts up_result
-			end
-		end
-		Dir.glob("#{repo}/.git/*") do |item|
-			if not File.directory?(item)
-				*before, after = item.split("/")
-				path = before.join("/")
-				up_result = drive_client.uploadFiles({:path => "/#{path}"}, [item])
-				puts up_result
-			end
+		if system("zip -r #{repo} #{repo}")
+			up_result = drive_client.uploadFiles({:path => "/#{repo}"}, ["#{repo}.zip"])
+			puts up_result
+			system("rm -rf #{repo}.zip")	
 		end
 		system("rm -rf #{repo}")
 		"Uploaded repo"
